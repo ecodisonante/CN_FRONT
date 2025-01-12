@@ -43,6 +43,7 @@ export class LoginComponent implements OnInit {
           console.log('Login successful:', response);
           this.msalService.instance.setActiveAccount(response.account);
           this.isLoggedIn = true;
+          localStorage.setItem('access_token', response.idToken);
           this.router.navigate(['/dashboard']);
         },
         error: (error) => {
@@ -81,6 +82,7 @@ export class LoginComponent implements OnInit {
     this.msalService.logoutPopup().subscribe({
       next: () => {
         this.isLoggedIn = false;
+        localStorage.removeItem('access_token');
         this.router.navigate(['/']);
       },
       error: (error) => {
