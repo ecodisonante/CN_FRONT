@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 import { Subscription } from 'rxjs';
+import { AppConfigService } from '../config/app.config.service';
 
 interface Doctor {
   id: number;
@@ -40,7 +41,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private msalService: MsalService
+    private msalService: MsalService,
+    private configService: AppConfigService
+
   ) {}
 
   ngOnInit() {
@@ -80,9 +83,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataLoadAttempts++;
 
     console.log(`Intento ${this.dataLoadAttempts} de cargar datos`);
+    const apiUrl = this.configService.getApiUrl();
 
     // Cargar doctores
-    this.http.get<Doctor[]>('http://localhost:8084/doctor/getAll').subscribe({
+    this.http.get<Doctor[]>(`${apiUrl}/doctor/getAll`).subscribe({
       next: (doctors) => {
         console.log('Doctores cargados:', doctors);
         this.doctors = doctors;
@@ -101,7 +105,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
 
     // Cargar pacientes
-    this.http.get<Patient[]>('http://localhost:8084/patient/getAll').subscribe({
+    this.http.get<Patient[]>(`${apiUrl}/patient/getAll`).subscribe({
       next: (patients) => {
         console.log('Pacientes cargados:', patients);
         this.patients = patients;
