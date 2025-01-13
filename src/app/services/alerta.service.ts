@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { from, lastValueFrom, Observable } from 'rxjs';
-import { MsalService } from '@azure/msal-angular';
+import { Observable } from 'rxjs';
 
 export interface AlertaMedica {
   idAlerta?: number; // Opcional, ya que se genera en el backend
@@ -15,15 +14,9 @@ export interface AlertaMedica {
   providedIn: 'root',
 })
 export class AlertaService {
-  private readonly apiUrl = 'http://localhost:8080/api/alertas';
+  private apiUrl = 'http://localhost:8080/api/alertas';
 
-
-  constructor(private readonly http: HttpClient) { }
-
-  getToken() {
-    return localStorage.getItem('access_token');
-  }
-
+  constructor(private http: HttpClient) { }
 
   obtenerAlertas(): Observable<AlertaMedica[]> {
     return this.http.get<AlertaMedica[]>(this.apiUrl);
@@ -41,6 +34,3 @@ export class AlertaService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }
-
-
-

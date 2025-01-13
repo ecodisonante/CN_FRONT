@@ -8,27 +8,45 @@ import { appConfig } from './app/app.config';
 
 // MSAL
 import { MsalModule } from '@azure/msal-angular';
-import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
+import { 
+  PublicClientApplication, 
+  InteractionType,
+  BrowserCacheLocation,
+  LogLevel 
+} from '@azure/msal-browser';
+
+const isIE = window.navigator.userAgent.indexOf('MSIE ') > -1 || window.navigator.userAgent.indexOf('Trident/') > -1;
 
 (async () => {
-  // 1) Creas tu instancia de MSAL:
-  const pca = new PublicClientApplication({
+  const msalConfig = {
     auth: {
       clientId: '0f3e837c-a515-4143-a08c-9bc776fdc0a4',
       authority: 'https://duocazurenative.b2clogin.com/duocazurenative.onmicrosoft.com/B2C_1_login_native',
       redirectUri: 'http://localhost:4200',
-      knownAuthorities: ['duocazurenative.b2clogin.com']
+      knownAuthorities: ['duocazurenative.b2clogin.com'],
+      navigateToLoginRequestUrl: true,
+      postLogoutRedirectUri: 'http://localhost:4200'
     },
     cache: {
-      cacheLocation: 'localStorage',
-      storeAuthStateInCookie: false
+      cacheLocation: BrowserCacheLocation.LocalStorage,
+      storeAuthStateInCookie: isIE
+    },
+    system: {
+      loggerOptions: {
+        loggerCallback: (level: LogLevel, message: string) => {
+          console.log(message);
+        },
+        logLevel: LogLevel.Verbose,
+        piiLoggingEnabled: false
+      }
     }
-  });
+  };
 
-  // 2) Esperas su inicialización
+  // Inicializar MSAL
+  const pca = new PublicClientApplication(msalConfig);
   await pca.initialize();
 
-  // 3) Ahora sí importas MsalModule con esa instancia
+  // Importar MsalModule con la configuración
   bootstrapApplication(AppComponent, {
     providers: [
       ...appConfig.providers,
@@ -38,20 +56,19 @@ import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
         MsalModule.forRoot(
           pca,
           {
-            interactionType: InteractionType.Redirect, // Cambiado a Redirect
-            authRequest: { 
-              scopes: ['openid', 'profile']
-            },
+            interactionType: InteractionType.Popup,
+            authRequest: {
+              scopes: ['openid', 'profile', 'offline_access']
+            }
           },
           {
-            interactionType: InteractionType.Redirect,
+            interactionType: InteractionType.Popup,
             protectedResourceMap: new Map([
-              ['https://graph.microsoft.com/v1.0/me', ['user.read']],
-            ]),
+              ['http://localhost:8084', ['openid', 'profile']]
+            ])
           }
         )
-      ),
+      )
     ]
-  })
-    .catch(err => console.error(err));
+  }).catch(err => console.error(err));
 })();

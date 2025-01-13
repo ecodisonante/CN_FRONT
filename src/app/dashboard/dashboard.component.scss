@@ -1,205 +1,31 @@
-.dashboard {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    background-color: #f4f6f9;
-    min-height: 100vh;
+// dashboard.component.scss
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
 
-    .dashboard-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
+.card {
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
 
-        .logo {
-            width: 70px;
-            /* Tamaño del logo */
-            height: auto;
-        }
-
-        h1 {
-            flex-grow: 1;
-            text-align: center;
-            margin: 0;
-            font-size: 24px;
-            color: #007bff;
-        }
-
-        .logout-btn {
-            background-color: #dc3545;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-
-            &:hover {
-                background-color: #c82333;
-            }
-        }
-    }
-
-    .actions {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-bottom: 20px;
-
-        button {
-            padding: 10px 20px;
-            font-size: 14px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-
-            &:first-child {
-                background-color: #28a745;
-                color: #fff;
-
-                &:hover {
-                    background-color: #218838;
-                }
-            }
-
-            &:last-child {
-                background-color: #ffc107;
-                color: #fff;
-
-                &:hover {
-                    background-color: #e0a800;
-                }
-            }
-        }
-    }
-
-    .alertas-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #fff;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        overflow: hidden;
-
-        thead {
-            background-color: #007bff;
-            color: #fff;
-
-            th {
-                padding: 10px;
-                text-align: left;
-                font-size: 14px;
-            }
-        }
-
-        tbody {
-            tr {
-                &:nth-child(odd) {
-                    background-color: #f9f9f9;
-                }
-
-                &:nth-child(even) {
-                    background-color: #fff;
-                }
-
-                td {
-                    padding: 10px;
-                    font-size: 14px;
-                }
-
-                button {
-                    margin-right: 5px;
-                    padding: 5px 10px;
-                    border: none;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    font-size: 12px;
-
-                    &:first-child {
-                        background-color: #007bff;
-                        color: #fff;
-
-                        &:hover {
-                            background-color: #0056b3;
-                        }
-                    }
-
-                    &:last-child {
-                        background-color: #dc3545;
-                        color: #fff;
-
-                        &:hover {
-                            background-color: #c82333;
-                        }
-                    }
-                }
-            }
-        }
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,.1);
     }
 }
 
-/* Responsividad */
-@media (max-width: 768px) {
-    .dashboard-header {
-        flex-direction: column;
-        align-items: center;
+.list-group-item {
+    transition: background-color 0.2s;
 
-        .logo {
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            font-size: 20px;
-            text-align: center;
-        }
-
-        .logout-btn {
-            margin-top: 10px;
-            font-size: 12px;
-        }
-    }
-
-    .actions {
-        flex-direction: column;
-        gap: 10px;
-
-        button {
-            font-size: 12px;
-            padding: 8px 15px;
-        }
-    }
-
-    .alertas-table {
-        font-size: 12px;
-
-        th,
-        td {
-            padding: 8px;
-        }
+    &:hover {
+        background-color: #f8f9fa;
     }
 }
 
-@media (max-width: 576px) {
-    .dashboard-header .logo {
-        width: 50px;
-    }
+.badge {
+    transition: all 0.2s;
+}
 
-    h1 {
-        font-size: 18px;
-    }
-
-    .alertas-table {
-
-        th,
-        td {
-            font-size: 10px;
-        }
-
-        button {
-            font-size: 10px;
-        }
-    }
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
 }
