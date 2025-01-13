@@ -1,29 +1,28 @@
 # Build stage
-FROM node:18-alpine as build
-
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
+# Cache dependencies
 COPY package*.json ./
-
-# Instalar dependencias
 RUN npm ci
 
-# Copiar el resto de los archivos
+# Build app
 COPY . .
-
-# Construir la aplicación
 RUN npm run build
 
 # Production stage
 FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
 
-# Copiar la configuración de nginx
+# Copiar configuración nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos construidos (ahora desde el directorio browser)
-COPY --from=build /app/dist/front-alertas-medicas/browser /usr/share/nginx/html
+# Copiar archivos estáticos
+COPY --from=builder /app/dist/front-alertas-medicas/browser .
+
+# Script de entrada para sustitución de variables
+COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
