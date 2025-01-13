@@ -1,13 +1,14 @@
 # Build stage
-FROM node:20-alpine as build
+FROM node:18-alpine as build
 
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
+# Copiar solo package.json y package-lock.json primero
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias con configuraciones optimizadas
+RUN npm ci --only=production \
+    && npm cache clean --force
 
 # Copiar el resto de los archivos
 COPY . .
@@ -21,8 +22,9 @@ FROM nginx:alpine
 # Copiar la configuración de nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos construidos desde la etapa de build
-COPY --from=build /app/dist/front-duoc-azure/browser /usr/share/nginx/html
+# Copiar los archivos construidos
+# Ajustamos la ruta según la estructura de salida de Angular
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
