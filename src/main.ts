@@ -25,9 +25,10 @@ const isIE = window.navigator.userAgent.indexOf('MSIE ') > -1 || window.navigato
       //redirectUri: 'http://localhost:4200',
       redirectUri: window.location.origin, // Esto tomará la URL base automáticamente
 
+
       knownAuthorities: ['duocazurenative.b2clogin.com'],
-      navigateToLoginRequestUrl: true,
-      postLogoutRedirectUri: 'http://localhost:4200'
+      postLogoutRedirectUri: window.location.origin,
+      navigateToLoginRequestUrl: true
     },
     cache: {
       cacheLocation: BrowserCacheLocation.LocalStorage,
