@@ -24,8 +24,8 @@ const isIE = window.navigator.userAgent.indexOf('MSIE ') > -1 || window.navigato
       authority: 'https://duocazurenative.b2clogin.com/duocazurenative.onmicrosoft.com/B2C_1_login_native',
       redirectUri: window.location.origin, // Esto tomará la URL base automáticamente
       knownAuthorities: ['duocazurenative.b2clogin.com'],
-      navigateToLoginRequestUrl: true,
-      postLogoutRedirectUri: 'http://localhost:4200'
+      postLogoutRedirectUri: window.location.origin,
+      navigateToLoginRequestUrl: true
     },
     cache: {
       cacheLocation: BrowserCacheLocation.LocalStorage,
