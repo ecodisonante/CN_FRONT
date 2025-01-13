@@ -21,8 +21,8 @@ FROM nginx:alpine
 # Copiar la configuración de nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos construidos
-COPY --from=build /app/dist/front-alertas-medicas /usr/share/nginx/html
+# Copiar los archivos construidos (ahora desde el directorio browser)
+COPY --from=build /app/dist/front-alertas-medicas/browser /usr/share/nginx/html
 
 EXPOSE 80
 
