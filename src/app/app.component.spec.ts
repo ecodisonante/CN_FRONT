@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'front-duoc-azure' title`, () => {
+  it(`should have the 'front-alertas-medicas' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('front-duoc-azure');
+    expect(app.title).toEqual('front-alertas-medicas');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, front-duoc-azure');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, front-alertas-medicas');
   });
 });
