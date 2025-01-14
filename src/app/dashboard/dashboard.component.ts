@@ -141,7 +141,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
   get criticalPatientsCount(): number {
-    return this.patients.filter(p => p.state === 'CRITICAL').length;
+    return this.patients.filter(p => p.state === 'Crítico').length;
   }
   refreshData() {
     this.dataLoadAttempts = 0; // Reset intentos
