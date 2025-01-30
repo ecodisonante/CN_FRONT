@@ -1,0 +1,77 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    tags:
+      # Se activa con tags semánticos
+      - 'v*.*.*'
+
+env:
+  DOCKER_IMAGE_NAME: ecodisonante/cloudnative.front
+
+jobs:
+  build-and-deploy:
+    # Solo se ejecute en la rama dev
+    # if: github.ref == 'refs/heads/dev' 
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Configurar `TAG` en el entorno
+      - name: Set TAG from GitHub ref
+        run: echo "TAG=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+      
+      # 3. Configurar acceso a Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+      # 4. Construir la imagen Docker
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file ./Dockerfile \
+            --build-arg ENV=production \
+            --tag $DOCKER_IMAGE_NAME:$TAG \
+            --tag $DOCKER_IMAGE_NAME:latest \
+            .
+
+      # 4. Subir la imagen a Docker Hub
+      - name: Push Docker image
+        run: |
+          docker push $DOCKER_IMAGE_NAME:$TAG
+          docker push $DOCKER_IMAGE_NAME:latest
+
+       # 5. Despliegue en el servidor AWS
+      - name: Deploy to AWS Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.AWS_SERVER_IP }}
+          username: ${{ secrets.AWS_SERVER_USER }}
+          key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+          port: 22
+          envs: DOCKER_IMAGE_NAME,TAG
+          script: |
+
+            # Descargar la imagen
+            sudo docker pull $DOCKER_IMAGE_NAME:$TAG
+
+            # Detener y eliminar el contenedor existente si existe
+            if [ $(sudo docker ps -a -q -f name=front) ]; then
+              echo "Deteniendo y eliminando el contenedor 'front'..."
+              sudo docker stop front
+              sudo docker rm front
+            else
+              echo "El contenedor 'front' no existe, continuando..."
+            fi
+
+            # Ejecutar el nuevo contenedor
+            sudo docker run -d --name front \
+              --network app-network \
+              -p 80:80 \
+              "$DOCKER_IMAGE_NAME:$TAG"
