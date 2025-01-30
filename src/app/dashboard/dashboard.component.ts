@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
-import { Subscription } from 'rxjs';
-import { AppConfigService } from '../config/app.config.service';
+import { environment } from '../../environments/environment';
 
 interface Doctor {
   id: number;
@@ -36,13 +35,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private dateInterval: any;
   private dataLoadAttempts = 0;
-  private maxAttempts = 3;
+  private readonly maxAttempts = 3;
 
   constructor(
-    private http: HttpClient,
-    private router: Router,
-    private msalService: MsalService,
-    private configService: AppConfigService
+    private readonly http: HttpClient,
+    private readonly router: Router,
+    private readonly msalService: MsalService,
 
   ) {}
 
@@ -83,8 +81,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataLoadAttempts++;
 
     console.log(`Intento ${this.dataLoadAttempts} de cargar datos`);
-    const apiUrl = this.configService.getApiUrl();
-
+    const apiUrl = environment.apiUrl;
     // Cargar doctores
     this.http.get<Doctor[]>(`${apiUrl}/doctor/getAll`).subscribe({
       next: (doctors) => {
