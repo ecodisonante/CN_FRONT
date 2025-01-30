@@ -27,6 +27,16 @@ FROM nginx:alpine
 # Copiar la aplicación construida desde la fase anterior
 COPY --from=build /app/dist/front-alertas-medicas/browser /usr/share/nginx/html
 
+# Crear directorio SSL en el contenedor
+RUN mkdir -p /etc/nginx/ssl
+
+# Escribir certificados desde variables de entorno
+RUN echo "$SSL_CERTIFICATE" > /etc/nginx/ssl/nginx-selfsigned.crt && \
+    echo "$SSL_PRIVATE_KEY" > /etc/nginx/ssl/nginx-selfsigned.key
+
+# Copiar configuración de Nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
 # Copiar configuración nginx primero
 # COPY nginx.conf /etc/nginx/conf.d/default.conf
 

@@ -37,6 +37,8 @@ jobs:
           docker build \
             --file ./Dockerfile \
             --build-arg ENV=production \
+            --build-arg SSL_CERTIFICATE="${{ secrets.SSL_CERTIFICATE }}" \
+            --build-arg SSL_PRIVATE_KEY="${{ secrets.SSL_PRIVATE_KEY }}" \
             --tag $DOCKER_IMAGE_NAME:$TAG \
             --tag $DOCKER_IMAGE_NAME:latest \
             .
@@ -58,6 +60,11 @@ jobs:
           envs: DOCKER_IMAGE_NAME,TAG
           script: |
 
+            # Agregar certificados SSL al server
+            echo "${{ secrets.SSL_CERTIFICATE }}" | sudo tee /home/ubuntu/nginx-selfsigned.crt > /dev/null
+            echo "${{ secrets.SSL_PRIVATE_KEY }}" | sudo tee /home/ubuntu/nginx-selfsigned.key > /dev/null
+            sudo chmod 600 /home/ubuntu/nginx-selfsigned.*
+      
             # Descargar la imagen
             sudo docker pull $DOCKER_IMAGE_NAME:$TAG
 
@@ -72,6 +79,8 @@ jobs:
 
             # Ejecutar el nuevo contenedor
             sudo docker run -d --name front \
-              --network app-network \
-              -p 80:80 \
-              "$DOCKER_IMAGE_NAME:$TAG"
+            -p 443:443 -p 80:80 \
+            -v /home/ubuntu/nginx-selfsigned.crt:/etc/nginx/ssl/nginx-selfsigned.crt \
+            -v /home/ubuntu/nginx-selfsigned.key:/etc/nginx/ssl/nginx-selfsigned.key \
+            -v /home/ubuntu/nginx.conf:/etc/nginx/nginx.conf \
+            "$DOCKER_IMAGE_NAME:$TAG"
