@@ -60,16 +60,6 @@ jobs:
             # 📌 Asegurar que los directorios existen en EC2
             sudo mkdir -p /home/ubuntu/nginx /home/ubuntu/ssl
       
-            # 📌 Descargar el último código fuente desde el repositorio
-            if [ ! -d "/home/ubuntu/cloudnative-front" ]; then
-              git clone https://github.com/tu-usuario/cloudnative-front.git /home/ubuntu/cloudnative-front
-            else
-              cd /home/ubuntu/cloudnative-front && git pull origin main
-            fi
-      
-            # 📌 Copiar `nginx.conf` desde el repositorio al servidor
-            cp /home/ubuntu/cloudnative-front/nginx.conf /home/ubuntu/nginx/nginx.conf
-      
             # 📌 Guardar certificados SSL en EC2 desde GitHub Secrets
             echo "${{ secrets.SSL_CERTIFICATE }}" | sudo tee /home/ubuntu/ssl/nginx-selfsigned.crt > /dev/null
             echo "${{ secrets.SSL_PRIVATE_KEY }}" | sudo tee /home/ubuntu/ssl/nginx-selfsigned.key > /dev/null

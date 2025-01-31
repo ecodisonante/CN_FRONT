@@ -35,21 +35,8 @@ RUN echo "$SSL_CERTIFICATE" > /etc/nginx/ssl/nginx-selfsigned.crt && \
     echo "$SSL_PRIVATE_KEY" > /etc/nginx/ssl/nginx-selfsigned.key
 
 # Copiar configuración de Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copiar configuración nginx primero
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Después establecer el workdir y copiar los archivos
-# WORKDIR /usr/share/nginx/html
-# COPY --from=builder /app/dist/front-alertas-medicas/browser .
-
-# Script de entrada
-# COPY docker-entrypoint.sh /
-# RUN chmod +x /docker-entrypoint.sh
-
-# Sobreescribir index.html default de nginx
-# COPY --from=build /app/dist/front-alertas-medicas/browser/index.csr.html /usr/share/nginx/html/index.html
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Exponer puertos
 EXPOSE 80 443
