@@ -2,17 +2,15 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { importProvidersFrom } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
-
 import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
-
-// MSAL
-import { MsalModule } from '@azure/msal-angular';
-import { 
-  PublicClientApplication, 
+import { environment } from './environments/environment';
+import { MsalModule } from '@azure/msal-angular'; // MSAL
+import {
+  PublicClientApplication,
   InteractionType,
   BrowserCacheLocation,
-  LogLevel 
+  LogLevel
 } from '@azure/msal-browser';
 
 const isIE = window.navigator.userAgent.indexOf('MSIE ') > -1 || window.navigator.userAgent.indexOf('Trident/') > -1;
@@ -22,12 +20,11 @@ const isIE = window.navigator.userAgent.indexOf('MSIE ') > -1 || window.navigato
     auth: {
       clientId: '0f3e837c-a515-4143-a08c-9bc776fdc0a4',
       authority: 'https://duocazurenative.b2clogin.com/duocazurenative.onmicrosoft.com/B2C_1_login_native',
-      //redirectUri: 'http://localhost:4200',
-      redirectUri: window.location.origin, // Esto tomará la URL base automáticamente
-
+      // redirectUri: window.location.origin, // Esto tomará la URL base automáticamente
+      redirectUri: environment.azureRedirectUri,
 
       knownAuthorities: ['duocazurenative.b2clogin.com'],
-      postLogoutRedirectUri: window.location.origin,
+      postLogoutRedirectUri: environment.azureRedirectUri,
       navigateToLoginRequestUrl: true
     },
     cache: {
@@ -67,7 +64,7 @@ const isIE = window.navigator.userAgent.indexOf('MSIE ') > -1 || window.navigato
           {
             interactionType: InteractionType.Popup,
             protectedResourceMap: new Map([
-              ['http://localhost:8084', ['openid', 'profile']]
+              [environment.apiUrl, ['openid', 'profile']]
             ])
           }
         )

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface AlertaMedica {
   idAlerta?: number; // Opcional, ya que se genera en el backend
@@ -14,9 +15,9 @@ export interface AlertaMedica {
   providedIn: 'root',
 })
 export class AlertaService {
-  private apiUrl = 'http://localhost:8080/api/alertas';
+  private readonly apiUrl = `${environment.apiUrl}/alertas`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private readonly http: HttpClient) { }
 
   obtenerAlertas(): Observable<AlertaMedica[]> {
     return this.http.get<AlertaMedica[]>(this.apiUrl);
