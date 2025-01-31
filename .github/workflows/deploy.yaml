@@ -90,7 +90,6 @@ jobs:
             # 📌 Ejecutar el nuevo contenedor con los certificados y `nginx.conf`
             sudo docker run -d --name front \
               -p 443:443 -p 80:80 \
-              -v /home/ubuntu/nginx:/etc/nginx \
               -v /home/ubuntu/ssl/nginx-selfsigned.crt:/etc/nginx/ssl/nginx-selfsigned.crt \
               -v /home/ubuntu/ssl/nginx-selfsigned.key:/etc/nginx/ssl/nginx-selfsigned.key \
               "$DOCKER_IMAGE_NAME:$TAG"
