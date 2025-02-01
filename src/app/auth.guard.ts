@@ -6,7 +6,7 @@ import { MsalService } from '@azure/msal-angular';
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  constructor(private readonly msalService: MsalService, private readonly router: Router) { }
+  constructor(private msalService: MsalService, private router: Router) { }
 
   canActivate(): boolean {
     const account = this.msalService.instance.getActiveAccount();
