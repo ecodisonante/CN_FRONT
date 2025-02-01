@@ -82,5 +82,6 @@ jobs:
               -p 443:443 -p 80:80 \
               -v /home/ubuntu/ssl/nginx-selfsigned.crt:/etc/nginx/ssl/nginx-selfsigned.crt \
               -v /home/ubuntu/ssl/nginx-selfsigned.key:/etc/nginx/ssl/nginx-selfsigned.key \
+              --network app-network \
               "$DOCKER_IMAGE_NAME:$TAG"
       
