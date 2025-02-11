@@ -1,0 +1,87 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    tags:
+      # Se activa con tags semánticos
+      - 'v*.*.*'
+
+env:
+  DOCKER_IMAGE_NAME: ecodisonante/cloudnative.front
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2️⃣ Configurar `TAG` en el entorno
+      - name: Set TAG from GitHub ref
+        run: echo "TAG=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+      
+      # 3️⃣ Configurar acceso a Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+      # 4️⃣ Construir la imagen Docker con los certificados
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file ./Dockerfile \
+            --build-arg ENV=production \
+            --build-arg SSL_CERTIFICATE="${{ secrets.SSL_CERTIFICATE }}" \
+            --build-arg SSL_PRIVATE_KEY="${{ secrets.SSL_PRIVATE_KEY }}" \
+            --tag $DOCKER_IMAGE_NAME:$TAG \
+            --tag $DOCKER_IMAGE_NAME:latest \
+            .
+
+      # 5️⃣ Subir la imagen a Docker Hub
+      - name: Push Docker image
+        run: |
+          docker push $DOCKER_IMAGE_NAME:$TAG
+          docker push $DOCKER_IMAGE_NAME:latest
+
+      # 6️⃣ Despliegue en el servidor AWS
+      - name: Deploy to AWS Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.AWS_SERVER_IP }}
+          username: ${{ secrets.AWS_SERVER_USER }}
+          key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+          port: 22
+          envs: DOCKER_IMAGE_NAME,TAG
+          script: |      
+            # 📌 Asegurar que los directorios existen en EC2
+            sudo mkdir -p /home/ubuntu/nginx /home/ubuntu/ssl
+      
+            # 📌 Guardar certificados SSL en EC2 desde GitHub Secrets
+            echo "${{ secrets.SSL_CERTIFICATE }}" | sudo tee /home/ubuntu/ssl/nginx-selfsigned.crt > /dev/null
+            echo "${{ secrets.SSL_PRIVATE_KEY }}" | sudo tee /home/ubuntu/ssl/nginx-selfsigned.key > /dev/null
+            sudo chmod 600 /home/ubuntu/ssl/nginx-selfsigned.*
+      
+            # 📌 Descargar la nueva imagen del contenedor
+            sudo docker pull $DOCKER_IMAGE_NAME:$TAG
+      
+            # 📌 Detener y eliminar el contenedor existente si ya está corriendo
+            if [ $(sudo docker ps -a -q -f name=front) ]; then
+              echo "Deteniendo y eliminando el contenedor 'front'..."
+              sudo docker stop front
+              sudo docker rm front
+            else
+              echo "El contenedor 'front' no existe, continuando..."
+            fi
+      
+            # 📌 Ejecutar el nuevo contenedor con los certificados y `nginx.conf`
+            sudo docker run -d --name front \
+              -p 443:443 -p 80:80 \
+              -v /home/ubuntu/ssl/nginx-selfsigned.crt:/etc/nginx/ssl/nginx-selfsigned.crt \
+              -v /home/ubuntu/ssl/nginx-selfsigned.key:/etc/nginx/ssl/nginx-selfsigned.key \
+              --network app-network \
+              "$DOCKER_IMAGE_NAME:$TAG"
+      

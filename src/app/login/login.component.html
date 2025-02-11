@@ -1,0 +1,39 @@
+<div class="login-container">
+    <div class="card">
+        <!-- Encabezado con Logo -->
+        <div class="card-header">
+            <img src="assets/images/alerta.webp" alt="Logo del Sistema de Alertas Médicas" class="logo">
+            <h1>{{ title }}</h1>
+            <p>Alertas médicas</p>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="card-body">
+            <!-- Mensaje de error -->
+            <div class="alert alert-danger" *ngIf="loginError">
+                {{ loginError }}
+            </div>
+
+            <!-- Botones -->
+            <div *ngIf="!isLoggedIn">
+                <button class="btn btn-success mb-2" (click)="login()">
+                    Iniciar Sesión
+                </button>
+                <br>
+                <!--button class="btn btn-link" (click)="resetPassword()">
+                    ¿Olvidaste tu contraseña?
+                </button-->
+            </div>
+            
+            <button class="btn btn-outline-secondary" (click)="logout()" *ngIf="isLoggedIn">
+                Cerrar Sesión
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer">
+            <p>© 2025 Front-Identity-Service</p>
+            <p>Cloud Native</p>
+        </div>
+    </div>
+</div>
