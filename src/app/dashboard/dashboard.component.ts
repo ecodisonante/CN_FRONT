@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+
 import { MsalService } from '@azure/msal-angular';
 import { environment } from '../../environments/environment';
 
@@ -25,7 +27,7 @@ interface Patient {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   standalone: true,
-  imports: [CommonModule]
+  imports: [CommonModule, RouterModule]  // Añade RouterModule aquí
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   doctors: Doctor[] = [];
@@ -36,13 +38,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private dateInterval: any;
   private dataLoadAttempts = 0;
   private readonly maxAttempts = 3;
+  isMainDashboard = true;
 
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router,
     private readonly msalService: MsalService,
 
-  ) {}
+  ) {
+
+
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      // Actualizar isMainDashboard basado en la ruta actual
+      this.isMainDashboard = event.url === '/dashboard';
+    });
+  
+  }
 
   ngOnInit() {
     const account = this.msalService.instance.getActiveAccount();
@@ -51,9 +64,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
       return;
     }
-
-    console.log('Cuenta activa encontrada:', account);
-    console.log('Token en localStorage:', localStorage.getItem('access_token'));
+    // Añade estas líneas para depuración
+    console.log('Cuenta activa:', account);
+    console.log('ID Token:', account.idToken);
+    console.log('Access Token en localStorage:', localStorage.getItem('access_token'));
+    // También puedes obtener el token actual así:
+    this.msalService.instance.acquireTokenSilent({
+      scopes: ['openid', 'profile'],
+      account: account
+    }).then(response => {
+      console.log('Token actual:', response.accessToken);
+    });
 
     this.loadData();
     

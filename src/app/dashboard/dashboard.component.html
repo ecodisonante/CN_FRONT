@@ -16,8 +16,26 @@
             </div>
         </div>
     </nav>
-
     <div class="container">
+        <!-- Navigation Menu -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" routerLink="/dashboard" [routerLinkActive]="['active']" [routerLinkActiveOptions]="{exact: true}">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" routerLink="/dashboard/doctors" routerLinkActive="active">
+                    <i class="bi bi-people-fill me-2"></i>Doctores
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" routerLink="/dashboard/patients" routerLinkActive="active">
+                    <i class="bi bi-person-fill me-2"></i>Pacientes
+                </a>
+            </li>
+        </ul>
+
         <!-- Loading Spinner -->
         <div *ngIf="loading" class="text-center my-5">
             <div class="spinner-border text-primary" role="status">
@@ -30,9 +48,12 @@
             {{error}}
             <button class="btn btn-sm btn-outline-danger ms-2" (click)="refreshData()">Reintentar</button>
         </div>
+        <!-- Router Outlet for Child Routes -->
+        <router-outlet></router-outlet>
 
+      
         <!-- Content -->
-        <div *ngIf="!loading && !error" class="row">
+        <div *ngIf="!loading && !error && isMainDashboard" class="row">
             <!-- Doctores -->
             <div class="col-12 mb-4">
                 <div class="card">
@@ -127,5 +148,6 @@
                 </div>
             </div>
         </div>
+    
     </div>
 </div>
