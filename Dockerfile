@@ -1,29 +1,45 @@
-# Build stage
-FROM node:18-alpine as builder
+# Fase 1: Construcción
+FROM node:22 AS build
+
+# Establecer el directorio de trabajo
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+
+# Copiar archivos de configuración y dependencias
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copiar todo el código fuente al contenedor
 COPY . .
-RUN npm run build
+
+# Construir la aplicación Angular - determinar si es prod
+RUN if [ "$NODE_ENV" = "production" ]; then \
+      npm run build --configuration=production; \
+    else \
+      npm run build; \
+    fi
+
+# Fase 2: Servidor Nginx para servir la aplicación Angular
+FROM nginx:stable-alpine
 
 # Production stage
 FROM nginx:alpine
-# Crear directorio SSL
+
+# Copiar la aplicación construida desde la fase anterior
+COPY --from=build /app/dist/front-alertas-medicas/browser /usr/share/nginx/html
+
+# Crear directorio SSL en el contenedor
 RUN mkdir -p /etc/nginx/ssl
 
-# Copiar configuración nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Escribir certificados desde variables de entorno
+RUN echo "$SSL_CERTIFICATE" > /etc/nginx/ssl/nginx-selfsigned.crt && \
+    echo "$SSL_PRIVATE_KEY" > /etc/nginx/ssl/nginx-selfsigned.key
 
-# Copiar archivos compilados
-COPY --from=builder /app/dist/front-alertas-medicas/browser /usr/share/nginx/html
+# Copiar configuración de Nginx
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Script de entrada
-COPY docker-entrypoint.sh /
-RUN chmod +x /docker-entrypoint.sh
-
+# Exponer puertos
 EXPOSE 80 443
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
-
-
-
+# Comando para iniciar Nginx
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
