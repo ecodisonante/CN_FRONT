@@ -1,0 +1,28 @@
+/* src/app/doctors/doctor-management/doctor-management.component.scss */
+:host {
+    display: block;
+    width: 100%;
+  }
+  
+  .card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  
+  .table {
+    th {
+      white-space: nowrap;
+    }
+    
+    td {
+      vertical-align: middle;
+    }
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .badge {
+    font-weight: 500;
+  }
