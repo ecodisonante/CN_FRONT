@@ -18,14 +18,14 @@ export interface MeasurementDTO {
 export class MeasurementService {
   constructor(private http: HttpClient) {}
 
-  getMeasurementsByPatient(patientId: number): Observable<MeasurementDTO[]> {
+ /*() getMeasurementsByPatient(patientId: number): Observable<MeasurementDTO[]> {
     
     return this.http.get<MeasurementDTO[]>(`${environment.apiUrl}/measurement/getMeasurements/${patientId}`);
-  }
+  }*/
 
-  getLatestMeasurements(): Observable<MeasurementDTO[]> {
-    return this.http.get<MeasurementDTO[]>(`${environment.apiUrl}/kafka/measurements`);
-  }
+    getLatestMeasurements(): Observable<MeasurementDTO[]> {
+      return this.http.get<MeasurementDTO[]>(`${environment.apiUrl}/kafka/measurements`);
+    }
 
   saveMeasurement(measurement: Omit<MeasurementDTO, 'id'>): Observable<MeasurementDTO> {
     return this.http.post<MeasurementDTO>(`${environment.apiUrl}/measurement/add`, measurement);

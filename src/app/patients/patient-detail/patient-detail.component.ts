@@ -1,5 +1,4 @@
-// src/app/patients/patient-detail/patient-detail.component.ts
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Patient } from '../../services/patient.service';
@@ -18,7 +17,7 @@ import { takeUntil } from 'rxjs/operators';
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title">
             <i class="bi bi-person-lines-fill me-2"></i>
-            Historial de Signos Vitales - {{patient?.name}}
+            Signos Vitales en Tiempo Real - {{patient?.name}}
           </h5>
           <button type="button" class="btn-close btn-close-white" (click)="close()"></button>
         </div>
@@ -26,7 +25,7 @@ import { takeUntil } from 'rxjs/operators';
           <!-- Filtros -->
           <div class="row mb-3">
             <div class="col-md-4">
-              <select class="form-select" [(ngModel)]="selectedSignal">
+              <select class="form-select" [(ngModel)]="selectedSignal" (ngModelChange)="applyFilters()">
                 <option [ngValue]="null">Todos los signos vitales</option>
                 <option *ngFor="let signal of signalTypes" [value]="signal">
                   {{getSignalDescription(signal)}}
@@ -36,7 +35,8 @@ import { takeUntil } from 'rxjs/operators';
             <div class="col-md-4">
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" placeholder="Buscar..." [(ngModel)]="searchTerm">
+                <input type="text" class="form-control" placeholder="Buscar..." 
+                       [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
               </div>
             </div>
             <div class="col-md-4 text-end">
@@ -71,6 +71,11 @@ import { takeUntil } from 'rxjs/operators';
                     </span>
                   </td>
                   <td>{{measurement.dateTime | date:'medium'}}</td>
+                </tr>
+                <tr *ngIf="filteredMeasurements.length === 0">
+                  <td colspan="4" class="text-center">
+                    No hay mediciones disponibles
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -113,14 +118,15 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class PatientDetailComponent implements OnInit, OnDestroy {
   @Input() patient?: Patient;
-  
-  measurements: MeasurementDTO[] = [];
+  @Output() closeModal = new EventEmitter<void>();
+
+  currentMeasurements: MeasurementDTO[] = [];
   filteredMeasurements: MeasurementDTO[] = [];
   signalTypes = Object.values(SignalType).filter(value => typeof value === 'number');
   selectedSignal: number | null = null;
   searchTerm: string = '';
   lastUpdate: Date = new Date();
-  nextUpdateIn: number = 10;
+  nextUpdateIn: number = 5; // Cambiado a 5 segundos
   private destroy$ = new Subject<void>();
 
   constructor(private measurementService: MeasurementService) {}
@@ -129,6 +135,8 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
     this.loadMeasurements();
     this.startAutoUpdate();
   }
+  
+
 
   ngOnDestroy() {
     this.destroy$.next();
@@ -136,41 +144,43 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
   }
 
   private startAutoUpdate() {
-    interval(1000).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.nextUpdateIn--;
-      if (this.nextUpdateIn <= 0) {
-        this.loadMeasurements();
-        this.nextUpdateIn = 60;
-      }
-    });
-  }
-
-  loadMeasurements() {
-    if (this.patient?.id) {
-      this.measurementService.getMeasurementsByPatient(this.patient.id).subscribe({
-        next: (data) => {
-          this.measurements = data.sort((a, b) => 
-            new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-          ).slice(0, 10);
-          this.applyFilters();
-          this.lastUpdate = new Date();
-        },
-        error: (error) => console.error('Error loading measurements:', error)
-      });
+  interval(1000).pipe(
+    takeUntil(this.destroy$)
+  ).subscribe(() => {
+    this.nextUpdateIn--;
+    if (this.nextUpdateIn <= 0) {
+      this.loadMeasurements();
+      this.nextUpdateIn = 5; // Reset a 5 segundos
     }
-  }
+  });
+}
 
-  applyFilters() {
-    this.filteredMeasurements = this.measurements.filter(m => {
-      const matchesSignal = !this.selectedSignal || m.idSing === this.selectedSignal;
-      const matchesSearch = !this.searchTerm || 
-        this.getSignalDescription(m.idSing).toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        m.measurementValue.toString().includes(this.searchTerm);
-      return matchesSignal && matchesSearch;
-    });
-  }
+
+loadMeasurements() {
+  if (!this.patient?.id) return;
+
+  this.measurementService.getLatestMeasurements().subscribe({
+    next: (allMeasurements) => {
+      // Solo filtramos las mediciones del paciente actual
+      this.currentMeasurements = allMeasurements
+        .filter(m => m.idPatient === this.patient?.id)
+        .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+      
+      this.applyFilters();
+      this.lastUpdate = new Date();
+    },
+    error: (error) => console.error('Error loading measurements:', error)
+  });
+}
+applyFilters() {
+  this.filteredMeasurements = this.currentMeasurements.filter(m => {
+    const matchesSignal = !this.selectedSignal || m.idSing === this.selectedSignal;
+    const matchesSearch = !this.searchTerm || 
+      this.getSignalDescription(m.idSing).toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      m.measurementValue.toString().includes(this.searchTerm);
+    return matchesSignal && matchesSearch;
+  });
+}
 
   getSignalDescription(signalId: number): string {
     return SIGNAL_THRESHOLDS[signalId as SignalType]?.description || 'Desconocido';
@@ -200,12 +210,12 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
   }
 
   getAlertCount(signalId: number): number {
-    return this.measurements.filter(m => 
+    return this.currentMeasurements.filter(m => 
       m.idSing === signalId && this.getAlertStatus(m) !== 'Normal'
     ).length;
   }
 
   close() {
-    // Implementar lógica de cierre
+    this.closeModal.emit();
   }
 }

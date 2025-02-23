@@ -133,37 +133,43 @@
                                             {{doctor.speciality}}
                                         </p>
 
-                                        <!-- Patients List -->
-                                        <div class="mt-3">
-                                            <h6 class="border-bottom pb-2">Pacientes Asignados</h6>
-                                            <div class="list-group">
-                                                <a *ngFor="let patient of getPatientsByDoctor(doctor.id)" 
-                                                   class="list-group-item list-group-item-action"
-                                                   style="cursor: pointer;"
-                                                   (click)="showPatientDetails(patient)">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <strong>{{patient.name}}</strong>
-                                                            <span [class]="'badge ms-2 ' + 
-                                                                (patient.state === 'Crítico' ? 'bg-danger' : 
-                                                                patient.state === 'Estable' ? 'bg-success' : 'bg-warning')">
-                                                                {{patient.state}}
-                                                            </span>
-                                                        </div>
-                                                        <div class="d-flex align-items-center">
-                                                            <span class="badge bg-info me-2">
-                                                                <i class="bi bi-activity me-1"></i>
-                                                                {{getSignalMeasurements(1).length}} mediciones
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                                <div *ngIf="getPatientsByDoctor(doctor.id).length === 0" 
-                                                     class="list-group-item text-muted">
-                                                    No hay pacientes asignados
-                                                </div>
-                                            </div>
-                                        </div>
+                                      <!-- Lista de pacientes -->
+<div class="mt-3">
+    <h6 class="border-bottom pb-2">Pacientes Asignados</h6>
+    <div class="list-group">
+      <a *ngFor="let patient of getPatientsByDoctor(doctor.id)" 
+         class="list-group-item list-group-item-action"
+         style="cursor: pointer;"
+         (click)="showPatientDetails(patient)">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{patient.name}}</strong>
+            <span [class]="'badge ms-2 ' + 
+                (patient.state === 'Crítico' ? 'bg-danger' : 
+                patient.state === 'Estable' ? 'bg-success' : 'bg-warning')">
+              {{patient.state}}
+            </span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span class="badge bg-info me-2">
+              <i class="bi bi-activity me-1"></i>
+              {{getPatientLatestMeasurements(patient.id)}} mediciones
+            </span>
+            <span class="badge bg-danger">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              {{getPatientActiveAlerts(patient.id)}} alertas
+            </span>
+          </div>
+        </div>
+      </a>
+      <div *ngIf="getPatientsByDoctor(doctor.id).length === 0" 
+           class="list-group-item text-muted">
+        No hay pacientes asignados
+      </div>
+    </div>
+  </div>
+  
+
                                     </div>
                                 </div>
                             </div>
@@ -179,86 +185,86 @@
         <!-- Patient Detail Modal -->
         <div *ngIf="showPatientDetail && selectedPatient" class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">
-                            <i class="bi bi-person-lines-fill me-2"></i>
-                            Historial Médico - {{selectedPatient.name}}
+              <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                  <h5 class="modal-title">
+                    <i class="bi bi-person-lines-fill me-2"></i>
+                    Historial Médico - {{selectedPatient.name}}
                         </h5>
                         <button type="button" class="btn-close btn-close-white" (click)="closePatientDetail()" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
+                        </div>
+                        <div class="modal-body">
                         <!-- Estado del Paciente -->
                         <div class="row mb-4">
                             <div class="col-md-6">
-                                <h6>Estado General</h6>
-                                <div class="card">
-                                    <div class="card-body">
-                                        <p class="mb-1">
-                                            <strong>Doctor Asignado:</strong> {{getDoctorName(selectedPatient.idDoctor)}}
-                                        </p>
-                                        <p class="mb-1">
-                                            <strong>Estado:</strong>
-                                            <span [class]="'badge ms-2 ' + 
-                                                (selectedPatient.state === 'Crítico' ? 'bg-danger' : 
-                                                selectedPatient.state === 'Estable' ? 'bg-success' : 'bg-warning')">
-                                                {{selectedPatient.state}}
-                                            </span>
-                                        </p>
-                                    </div>
+                            <h6>Estado General</h6>
+                            <div class="card">
+                                <div class="card-body">
+                                <p class="mb-1">
+                                    <strong>Doctor Asignado:</strong> {{getDoctorName(selectedPatient.idDoctor)}}
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Estado:</strong>
+                                    <span [class]="'badge ms-2 ' + 
+                                        (selectedPatient.state === 'Crítico' ? 'bg-danger' : 
+                                        selectedPatient.state === 'Estable' ? 'bg-success' : 'bg-warning')">
+                                    {{selectedPatient.state}}
+                                    </span>
+                                </p>
                                 </div>
+                            </div>
                             </div>
                             <div class="col-md-6">
                                 <h6>Última Actualización</h6>
                                 <div class="card">
-                                    <div class="card-body">
-                                        <p class="mb-1">{{lastUpdate | date:'medium'}}</p>
-                                        <p class="mb-0 text-muted">
-                                            Próxima actualización en {{nextUpdateIn}} segundos
-                                        </p>
-                                    </div>
+                                  <div class="card-body">
+                                    <p class="mb-1">{{lastUpdate | date:'medium'}}</p>
+                                    <p class="mb-0 text-muted">
+                                      Próxima actualización en {{nextUpdateIn}} segundos
+                                    </p>
+                                  </div>
                                 </div>
+                              </div>
                             </div>
-                        </div>
-
+                        <!-- Mediciones -->
                         <!-- Mediciones -->
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <h6>Signos Vitales</h6>
+                            <h6>Signos Vitales</h6>
                             </div>
                             <div class="col-md-4 mb-4" *ngFor="let signalId of [1,2,3,4,5]">
-                                <div class="card h-100">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">{{getSignalLabel(signalId)}}</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <ng-container *ngIf="getSignalMeasurements(signalId).length > 0">
-                                            <div class="list-group">
-                                                <div *ngFor="let measurement of getSignalMeasurements(signalId).slice(0, 5)" 
-                                                     class="list-group-item"
-                                                     [class.list-group-item-warning]="isAlertValue(measurement)">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <strong>{{measurement.measurementValue}} {{getSignalUnit(signalId)}}</strong>
-                                                        <small class="text-muted">{{measurement.dateTime | date:'short'}}</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </ng-container>
-                                        <div *ngIf="getSignalMeasurements(signalId).length === 0" 
-                                             class="text-muted text-center py-3">
-                                            No hay mediciones registradas
+                            <div class="card h-100">
+                                <div class="card-header">
+                                <h6 class="mb-0">{{getSignalLabel(signalId)}}</h6>
+                                </div>
+                                <div class="card-body">
+                                <ng-container *ngIf="getSignalMeasurements(signalId, selectedPatient.id).length > 0">
+                                    <div class="list-group">
+                                    <div *ngFor="let measurement of getSignalMeasurements(signalId, selectedPatient.id).slice(0, 5)" 
+                                        class="list-group-item"
+                                        [class.list-group-item-warning]="isAlertValue(measurement)">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                        <strong>{{measurement.measurementValue}} {{getSignalUnit(signalId)}}</strong>
+                                        <small class="text-muted">{{measurement.dateTime | date:'short'}}</small>
                                         </div>
                                     </div>
+                                    </div>
+                                </ng-container>
+                                <div *ngIf="getSignalMeasurements(signalId, selectedPatient.id).length === 0" 
+                                    class="text-muted text-center py-3">
+                                    No hay mediciones registradas
                                 </div>
+                                </div>
+                            </div>
                             </div>
                         </div>
 
-                        <!-- Error de Mediciones -->
+                       <!-- Error de Mediciones -->
                         <div *ngIf="measurementError" class="alert alert-warning mt-3">
                             {{measurementError}}
                         </div>
-                    </div>
-                    <div class="modal-footer">
+                        </div>
+                        <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" (click)="closePatientDetail()">
                             Cerrar
                         </button>
@@ -266,7 +272,7 @@
                             <i class="bi bi-arrow-clockwise me-1"></i>
                             Actualizar
                         </button>
+                        </div>
+                    </div>
                     </div>
                 </div>
-            </div>
-        </div>

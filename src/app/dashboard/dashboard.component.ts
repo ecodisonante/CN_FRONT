@@ -7,7 +7,12 @@ import { Subject, interval, of } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
 import { environment } from '../../environments/environment.prod';
 import { MeasurementService, MeasurementDTO } from '../services/measurement.service';
-
+import { SignalType, SIGNAL_THRESHOLDS } from '../interfaces/medical-types';
+export interface OrganizedMeasurements {
+  [patientId: number]: {
+    [signalType in SignalType]?: MeasurementDTO[];
+  };
+}
 interface Doctor {
   id: number;
   name: string;
@@ -34,6 +39,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   doctors: Doctor[] = [];
   patients: Patient[] = [];
   measurements: MeasurementDTO[] = [];
+  organizedMeasurements: OrganizedMeasurements = {};
   currentDate: string = new Date().toLocaleString();
   loading: boolean = true;
   error: string | null = null;
@@ -43,13 +49,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   nextUpdateIn: number = 5;
   measurementError: string | null = null;
   hasKafkaError = false;
-  organizedMeasurements: Map<number, MeasurementDTO[]> = new Map();
+  isMainDashboard = true;
   
   private dateInterval: any;
   private destroy$ = new Subject<void>();
   private dataLoadAttempts = 0;
   private readonly maxAttempts = 3;
-  isMainDashboard = true;
 
   constructor(
     private readonly http: HttpClient,
@@ -73,7 +78,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.loadData();
     this.startAutoUpdate();
-    this.loadLatestMeasurements(); // Cargar mediciones iniciales
+    
+    this.dateInterval = setInterval(() => {
+      this.currentDate = new Date().toLocaleString();
+    }, 60000);
   }
 
   ngOnDestroy() {
@@ -83,7 +91,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
   private startAutoUpdate() {
     interval(1000).pipe(
       takeUntil(this.destroy$)
@@ -91,7 +98,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.nextUpdateIn--;
       if (this.nextUpdateIn <= 0) {
         this.loadLatestMeasurements();
-        this.nextUpdateIn = 5; // Reset a 5 segundos
+        this.nextUpdateIn = 5;
       }
     });
   }
@@ -103,11 +110,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
       })
     ).subscribe({
       next: (measurements) => {
-        // Simplemente actualizamos con las últimas mediciones
         this.measurements = measurements;
+        this.organizeMeasurements(measurements);
         this.lastUpdate = new Date();
+        this.updatePatientsState();
       }
     });
+  }
+  private updatePatientsState() {
+    this.patients = this.patients.map(patient => ({
+      ...patient,
+      state: this.getPatientActiveAlerts(patient.id) > 0 ? 'Crítico' : 'Estable'
+    }));
+  }
+  private organizeMeasurements(measurements: MeasurementDTO[]) {
+    const organized: OrganizedMeasurements = {};
+
+    measurements.forEach(measurement => {
+      const { idPatient, idSing } = measurement;
+
+      if (!organized[idPatient]) {
+        organized[idPatient] = {};
+      }
+
+      if (!organized[idPatient][idSing as SignalType]) {
+        organized[idPatient][idSing as SignalType] = [];
+      }
+
+      organized[idPatient][idSing as SignalType]!.push(measurement);
+    });
+
+    // Ordenar las mediciones por fecha (más reciente primero)
+    Object.values(organized).forEach((patientMeasurements: { [signalType in SignalType]?: MeasurementDTO[] }) => {
+      Object.values(patientMeasurements).forEach((signalMeasurements: MeasurementDTO[]) => {
+        signalMeasurements.sort((a: MeasurementDTO, b: MeasurementDTO) => 
+          new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+        );
+      });
+    });
+
+    this.organizedMeasurements = organized;
   }
 
   loadData() {
@@ -145,11 +187,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     });
   }
-
+  getPatientMeasurements(patientId: number): MeasurementDTO[] {
+    return this.measurements
+      .filter(m => m.idPatient === patientId)
+      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+  }
+ 
   loadMeasurements() {
     if (!this.selectedPatient) return;
-    
-    this.measurementService.getMeasurementsByPatient(this.selectedPatient.id)
+  
+    this.measurementService.getLatestMeasurements()
       .pipe(
         catchError(error => {
           console.error('Error al cargar mediciones:', error);
@@ -159,51 +206,75 @@ export class DashboardComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (measurements) => {
-          this.measurements = measurements;
+          // Filtrar mediciones para el paciente seleccionado
+          const filteredMeasurements = measurements.filter(
+            (measurement) => measurement.idPatient === this.selectedPatient!.id
+          );
+  
+          this.measurements = filteredMeasurements;
           this.lastUpdate = new Date();
           this.hasKafkaError = false;
           this.measurementError = null;
-          
+  
           // Organizar mediciones por tipo
-          this.organizedMeasurements = this.organizeMeasurementsByType(measurements);
+          this.organizedMeasurements = this.organizeMeasurementsByType(filteredMeasurements);
         }
       });
   }
-
-  private organizeMeasurementsByType(measurements: MeasurementDTO[]): Map<number, MeasurementDTO[]> {
-    const organized = new Map<number, MeasurementDTO[]>();
-    
+  private organizeMeasurementsByType(measurements: MeasurementDTO[]): OrganizedMeasurements {
+    const organized: OrganizedMeasurements = {};
+  
     measurements.forEach(measurement => {
-      if (!organized.has(measurement.idSing)) {
-        organized.set(measurement.idSing, []);
+      const { idPatient, idSing } = measurement;
+  
+      if (!organized[idPatient]) {
+        organized[idPatient] = {};
       }
-      organized.get(measurement.idSing)?.push(measurement);
+  
+      if (!organized[idPatient][idSing as SignalType]) {
+        organized[idPatient][idSing as SignalType] = [];
+      }
+  
+      organized[idPatient][idSing as SignalType]!.push(measurement);
     });
-
-    // Ordenar cada grupo por fecha, más reciente primero
-    organized.forEach(measurementList => {
-      measurementList.sort((a, b) => 
-        new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-      );
-    });
-
+  
     return organized;
   }
 
-  getSignalMeasurements(signalId: number): MeasurementDTO[] {
-    return this.organizedMeasurements?.get(signalId) || [];
+  getSignalMeasurements(signalId: SignalType, patientId?: number): MeasurementDTO[] {
+    const targetPatientId = patientId || this.selectedPatient?.id;
+    if (!targetPatientId) return [];
+
+    return this.organizedMeasurements[targetPatientId]?.[signalId] || [];
   }
+  getPatientLatestMeasurements(patientId: number): number {
+    if (!this.organizedMeasurements[patientId]) return 0;
+    
+    return Object.values(this.organizedMeasurements[patientId])
+      .reduce((total, measurements) => total + measurements.length, 0);
+  }
+  getPatientActiveAlerts(patientId: number): number {
+    if (!this.organizedMeasurements[patientId]) return 0;
+  
+    let alertCount = 0;
+    Object.entries(this.organizedMeasurements[patientId]).forEach(([signalId, measurements]) => {
+      if (measurements.length > 0 && this.isAlertValue(measurements[0])) {
+        alertCount++;
+      }
+    });
+    return alertCount;
+  }
+
   closePatientDetail() {
-    this.showPatientDetail = false;
     this.selectedPatient = undefined;
-    document.body.classList.remove('modal-open');  // Importante: eliminar la clase del body
+    this.showPatientDetail = false;
+    document.body.classList.remove('modal-open'); // Eliminar clase del body
   }
   
   showPatientDetails(patient: Patient) {
     this.selectedPatient = patient;
     this.showPatientDetail = true;
-    document.body.classList.add('modal-open');  // Importante: agregar la clase al body
-    this.loadMeasurements();
+    document.body.classList.add('modal-open'); // Agregar clase al body para evitar scroll
   }
 
   handleError(error: any) {
@@ -268,13 +339,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   get criticalMeasurementsCount(): number {
-    return this.measurements.filter(m => this.isAlertValue(m)).length;
+    return this.patients.reduce((total, patient) => 
+      total + this.getPatientActiveAlerts(patient.id), 0);
   }
-  getPatientMeasurements(patientId: number): MeasurementDTO[] {
-    return this.measurements
-      .filter(m => m.idPatient === patientId)
-      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-  }
+ 
   refreshData() {
     this.dataLoadAttempts = 0;
     this.loadData();
