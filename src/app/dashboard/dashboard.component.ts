@@ -40,7 +40,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectedPatient?: Patient;
   showPatientDetail = false;
   lastUpdate: Date = new Date();
-  nextUpdateIn: number = 10;
+  nextUpdateIn: number = 5;
   measurementError: string | null = null;
   hasKafkaError = false;
   organizedMeasurements: Map<number, MeasurementDTO[]> = new Map();
@@ -73,10 +73,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.loadData();
     this.startAutoUpdate();
-    
-    this.dateInterval = setInterval(() => {
-      this.currentDate = new Date().toLocaleString();
-    }, 60000);
+    this.loadLatestMeasurements(); // Cargar mediciones iniciales
   }
 
   ngOnDestroy() {
@@ -93,8 +90,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ).subscribe(() => {
       this.nextUpdateIn--;
       if (this.nextUpdateIn <= 0) {
-        this.refreshData();
-        this.nextUpdateIn = 10;
+        this.loadLatestMeasurements();
+        this.nextUpdateIn = 5; // Reset a 5 segundos
+      }
+    });
+  }
+  loadLatestMeasurements() {
+    this.measurementService.getLatestMeasurements().pipe(
+      catchError(error => {
+        console.error('Error al cargar mediciones:', error);
+        return of([]);
+      })
+    ).subscribe({
+      next: (measurements) => {
+        // Simplemente actualizamos con las últimas mediciones
+        this.measurements = measurements;
+        this.lastUpdate = new Date();
       }
     });
   }
@@ -259,7 +270,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   get criticalMeasurementsCount(): number {
     return this.measurements.filter(m => this.isAlertValue(m)).length;
   }
-
+  getPatientMeasurements(patientId: number): MeasurementDTO[] {
+    return this.measurements
+      .filter(m => m.idPatient === patientId)
+      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+  }
   refreshData() {
     this.dataLoadAttempts = 0;
     this.loadData();
