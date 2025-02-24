@@ -1,0 +1,5 @@
+  <!-- Modal para detalles del paciente -->
+  <app-patient-detail *ngIf="selectedPatient" 
+                      [patient]="selectedPatient" 
+                      (closeModal)="closePatientDetail()">
+  </app-patient-detail>
